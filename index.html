@@ -9,6 +9,16 @@
         font-family: sans-serif;
         padding: 20px;
       }
+      .version {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        background: #eee;
+        padding: 5px 10px;
+        border-radius: 10px;
+        font-size: 12px;
+        color: #555;
+      }
       .product {
         display: flex;
         align-items: center;
@@ -71,6 +81,7 @@
     </style>
   </head>
   <body>
+    <div class="version">Ver.1.0</div>
     <div class="fixed-top">
       <input type="text" id="storeNumber" pattern="\d{5}" placeholder="店舗番号" class="store-input" required />
       <div class="counter" id="counter">0件選択中</div>
@@ -86,8 +97,7 @@
     </div>
 
     <script>
-      
-      const sheetUrl = 'https://script.google.com/macros/s/AKfycbxt3RLX6XW0JoCtecC7tvijpkKrezlwZglUa0eAC3o_fYn2QrXbbYfVwCXSrIZFvuhRYA/exec';
+      const sheetUrl = 'https://script.google.com/macros/s/AKfycbwghmF2nJNfm15gUiWlEhmuh5z5aKRO6s7A24dJSX4lgh8jWhzPqHbq56-QPONBDdyspw/exec';
       const counter = document.getElementById('counter');
       const productList = document.getElementById('productList');
       const historyList = document.getElementById('historyList');
