@@ -4,9 +4,159 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>商品選択フォーム</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 20px;
+      }
+      .product {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .product img {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        margin-right: 10px;
+      }
+      .fixed-top {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        z-index: 1000;
+        background: #fff;
+        padding: 10px;
+        border-radius: 10px;
+        box-shadow: 0 0 5px rgba(0,0,0,0.2);
+      }
+      .counter {
+        background: #333;
+        color: #fff;
+        padding: 8px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+      }
+      .submit-btn {
+        padding: 10px 20px;
+        background: #4CAF50;
+        color: #fff;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+      }
+      .submit-btn:hover {
+        background: #45a049;
+      }
+      .store-input {
+        width: 80px;
+        padding: 5px;
+        font-size: 14px;
+      }
+      .form-area {
+        margin-top: 80px;
+      }
+      .history {
+        margin-top: 30px;
+        background: #f9f9f9;
+        padding: 10px;
+        border-radius: 10px;
+      }
+      .history-item {
+        margin-bottom: 10px;
+      }
+    </style>
   </head>
   <body>
+    <div class="fixed-top">
+      <input type="text" id="storeNumber" pattern="\d{5}" placeholder="店舗番号" class="store-input" required />
+      <div class="counter" id="counter">0件選択中</div>
+      <button id="submitBtn" class="submit-btn">送信</button>
+    </div>
+
     <h1>商品選択フォーム</h1>
-    <p>このHTMLはGitHub Pages用の完成版です。</p>
+    <div id="productList" class="form-area"></div>
+
+    <div class="history" id="history">
+      <h3>送信履歴</h3>
+      <div id="historyList"></div>
+    </div>
+
+    <script>
+      const sheetUrl = 'https://script.google.com/macros/s/AKfycbwghmF2nJNfm15gUiWlEhmuh5z5aKRO6s7A24dJSX4lgh8jWhzPqHbq56-QPONBDdyspw/exec';
+      const counter = document.getElementById('counter');
+      const productList = document.getElementById('productList');
+      const historyList = document.getElementById('historyList');
+      const storeNumberInput = document.getElementById('storeNumber');
+
+      function updateCounter() {
+        const checkedCount = document.querySelectorAll('input[name="products"]:checked').length;
+        counter.textContent = `${checkedCount}件選択中`;
+      }
+
+      async function fetchProducts() {
+        try {
+          const res = await fetch(sheetUrl);
+          const data = await res.json();
+          data.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.className = 'product';
+            div.innerHTML = `
+              <input type="checkbox" id="product${index}" name="products" value="${item.kata},${item.sku},${item.jan},${item.name}" />
+              <label for="product${index}">
+                <img src="${item.thumbnail}" alt="${item.name}" />
+                ${item.name} (型:${item.kata} SKU:${item.sku} JAN:${item.jan})
+              </label>
+            `;
+            productList.appendChild(div);
+          });
+          productList.addEventListener('change', updateCounter);
+        } catch (err) {
+          alert('マスタデータの取得に失敗しました');
+          console.error(err);
+        }
+      }
+
+      fetchProducts();
+
+      document.getElementById('submitBtn').addEventListener('click', async () => {
+        const storeNumber = storeNumberInput.value.trim();
+        if (!/^\d{5}$/.test(storeNumber)) {
+          alert('店舗番号は5桁で入力してください');
+          return;
+        }
+        const checked = [...document.querySelectorAll('input[name="products"]:checked')].map(el => el.value);
+        if (checked.length === 0) {
+          alert('商品を選択してください');
+          return;
+        }
+        try {
+          const res = await fetch(sheetUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ storeNumber, products: checked }),
+          });
+          const result = await res.json();
+          if (result.status === 'success') {
+            alert('送信しました！（メールも送信済み）');
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.textContent = `店舗番号: ${storeNumber} / 商品数: ${checked.length}件`;
+            historyList.prepend(item);
+            storeNumberInput.value = '';
+            document.querySelectorAll('input[name="products"]').forEach(el => el.checked = false);
+            updateCounter();
+          } else {
+            alert('送信失敗: ' + result.message);
+          }
+        } catch (err) {
+          alert('送信時にエラーが発生しました');
+          console.error(err);
+        }
+      });
+    </script>
   </body>
 </html>
